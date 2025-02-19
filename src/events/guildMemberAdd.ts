@@ -2,9 +2,14 @@ import { GuildMember, AttachmentBuilder } from 'discord.js';
 import { createWelcomeImage } from '../utils/canvasUtils';
 import config from '../config/config';
 
+function getRandomWelcomeMessage(username: string): string {
+    const messages = config.welcomeMessages;
+    const randomIndex = Math.floor(Math.random() * messages.length);
+    return messages[randomIndex].replace('{user}', `<@${username}>`);
+}
+
 export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
     try {
-        console.log('Channel ID from config:', config.welcomeChannelId);
         const welcomeChannel = member.guild.channels.cache.get(config.welcomeChannelId);
         
         if (!welcomeChannel || !welcomeChannel.isTextBased()) {
@@ -18,8 +23,10 @@ export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
         const welcomeBuffer = await createWelcomeImage(member, config);
         const attachment = new AttachmentBuilder(welcomeBuffer, { name: 'welcome.png' });
         
+        const welcomeMessage = getRandomWelcomeMessage(member.user.id);
+        
         await welcomeChannel.send({
-            content: `Welcome ${member.user}!`,
+            content: welcomeMessage,
             files: [attachment]
         });
     } catch (error) {

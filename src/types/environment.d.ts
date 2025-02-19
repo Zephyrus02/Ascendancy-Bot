@@ -4,6 +4,7 @@ declare global {
             DISCORD_TOKEN: string;
             WELCOME_CHANNEL_ID: string;
             NODE_ENV: 'development' | 'production';
+            PORT: string;
         }
     }
 }

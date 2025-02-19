@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, GatewayIntentBits, ActivityType } from 'discord.js';
 import dotenv from 'dotenv';
 import { handleGuildMemberAdd } from './events/guildMemberAdd';
 import { handleReady } from './events/ready';
@@ -14,22 +14,43 @@ const server = http.createServer((req, res) => {
 });
 
 // Listen on the port provided by Render
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 server.listen(port, () => {
     console.log(`HTTP server is listening on port ${port}`);
 });
 
-// Create client instance
+// Create client instance with required intents
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences
     ]
 });
 
+// Function to update member count
+const updateMemberCount = () => {
+    const guild = client.guilds.cache.first();
+    if (guild) {
+        client.user?.setPresence({
+            activities: [{ 
+                name: `${guild.memberCount} members`,
+                type: ActivityType.Watching
+            }],
+            status: 'online'
+        });
+    }
+};
+
 // Register event handlers
 client.on('ready', () => handleReady(client));
-client.on('guildMemberAdd', handleGuildMemberAdd);
+client.on('guildMemberAdd', async (member) => {
+    await handleGuildMemberAdd(member);
+    await handleReady(client); // Update member count
+});
+client.on('guildMemberRemove', async () => {
+    await handleReady(client); // Update member count
+});
 
 // Error handling
 client.on('error', (error: Error) => {

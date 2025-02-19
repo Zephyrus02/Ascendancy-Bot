@@ -10,6 +10,9 @@ function getRandomWelcomeMessage(username: string): string {
 
 export async function handleGuildMemberAdd(member: GuildMember): Promise<void> {
     try {
+        // Skip if the member is a bot
+        if (member.user.bot) return;
+
         const welcomeChannel = member.guild.channels.cache.get(config.welcomeChannelId);
         
         if (!welcomeChannel || !welcomeChannel.isTextBased()) {

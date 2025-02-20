@@ -5,12 +5,19 @@ import { handleReady } from './events/ready';
 import * as startCommand from './commands/start';
 import http from 'http';
 import { deployCommands } from './deploy-commands';
+import fetch from 'node-fetch';  // Add this import at the top
 
 // Load environment variables
 dotenv.config();
 
-// Create a simple HTTP server
+// Create a simple HTTP server with ping endpoint
 const server = http.createServer((req, res) => {
+    if (req.url === '/ping') {
+        res.writeHead(200);
+        res.end('pong');
+        return;
+    }
+    
     res.writeHead(200);
     res.end('Discord bot is running!');
 });
@@ -20,6 +27,20 @@ const port = process.env.PORT || 8080;
 server.listen(port, () => {
     console.log(`HTTP server is listening on port ${port}`);
 });
+
+// Function to ping the server
+const pingServer = async () => {
+    try {
+        const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
+        const response = await fetch(`${url}/ping`);
+        console.log('Keep-alive ping sent, status:', response.status);
+    } catch (error) {
+        console.error('Error pinging server:', error);
+    }
+};
+
+// Set up auto-ping every 15 minutes
+setInterval(pingServer, 15 * 60 * 1000);
 
 // Create client instance with required intents
 const client = new Client({

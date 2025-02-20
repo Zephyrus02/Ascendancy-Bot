@@ -1,8 +1,10 @@
-import { Client, GatewayIntentBits, ActivityType } from 'discord.js';
+import { Client, GatewayIntentBits, ActivityType, Collection, CommandInteraction, SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import { handleGuildMemberAdd } from './events/guildMemberAdd';
 import { handleReady } from './events/ready';
+import * as startCommand from './commands/start';
 import http from 'http';
+import { deployCommands } from './deploy-commands';
 
 // Load environment variables
 dotenv.config();
@@ -24,8 +26,35 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildPresences
+        GatewayIntentBits.GuildVoiceStates 
     ]
+});
+
+// Define command interface
+interface Command {
+    data: SlashCommandBuilder;
+    execute: (interaction: CommandInteraction) => Promise<void>;
+}
+
+// Create commands collection with proper typing
+const commands = new Collection<string, Command>();
+commands.set(startCommand.data.name, startCommand as Command);
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const command = commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+        await command.execute(interaction);
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ 
+            content: 'There was an error executing this command!', 
+            ephemeral: true 
+        });
+    }
 });
 
 // Function to update member count
@@ -57,5 +86,18 @@ client.on('error', (error: Error) => {
     console.error('Discord client error:', error);
 });
 
-// Login to Discord
-client.login(process.env.DISCORD_TOKEN);
+async function startBot() {
+    try {
+        // Deploy commands first
+        await deployCommands();
+
+        // Then start the bot
+        await client.login(process.env.DISCORD_TOKEN);
+    } catch (error) {
+        console.error('Error starting bot:', error);
+        process.exit(1);
+    }
+}
+
+// Start the bot
+startBot();

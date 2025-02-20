@@ -68,13 +68,25 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
+        // Defer reply immediately for all commands
+        await interaction.deferReply({ ephemeral: true });
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
-        await interaction.reply({ 
-            content: 'There was an error executing this command!', 
-            ephemeral: true 
-        });
+        console.error('Command execution error:', error);
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ 
+                    content: 'There was an error executing this command!', 
+                    ephemeral: true 
+                });
+            } else if (interaction.deferred) {
+                await interaction.editReply({
+                    content: 'There was an error executing this command!'
+                });
+            }
+        } catch (followUpError) {
+            console.error('Error sending error message:', followUpError);
+        }
     }
 });
 

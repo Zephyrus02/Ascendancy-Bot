@@ -5,7 +5,7 @@ import { handleReady } from './events/ready';
 import * as startCommand from './commands/start';
 import http from 'http';
 import { deployCommands } from './deploy-commands';
-import fetch from 'node-fetch';  // Add this import at the top
+import fetch from 'node-fetch';
 
 // Load environment variables
 dotenv.config();
@@ -64,13 +64,20 @@ commands.set(startCommand.data.name, startCommand as Command);
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
+    console.log(`Received command: ${interaction.commandName}`);
+    
     const command = commands.get(interaction.commandName);
-    if (!command) return;
+    if (!command) {
+        console.log(`Command not found: ${interaction.commandName}`);
+        return;
+    }
 
     try {
-        // Defer reply immediately for all commands
+        console.log('Deferring reply...');
         await interaction.deferReply({ ephemeral: true });
+        console.log('Executing command...');
         await command.execute(interaction);
+        console.log('Command executed successfully');
     } catch (error) {
         console.error('Command execution error:', error);
         try {

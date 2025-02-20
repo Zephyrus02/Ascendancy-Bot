@@ -6,16 +6,13 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     try {
-        // Since we already deferred the reply in the main handler, use editReply
         await interaction.editReply({
-            content: 'Game session started! Ready to play?',
-            ephemeral: true
+            content: 'Game session started! Ready to play?'
         });
     } catch (error) {
         console.error('Error in start command:', error);
         await interaction.editReply({
-            content: 'There was an error starting the game session.',
-            ephemeral: true
+            content: 'There was an error starting the game session.'
         });
     }
 }
